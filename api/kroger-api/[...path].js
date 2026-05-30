@@ -5,11 +5,12 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const { path } = req.query;
+    const { path, ...queryParams } = req.query;
     const apiPath = Array.isArray(path) ? path.join("/") : path || "";
-    const url = new URL(req.url, "http://localhost");
-    const queryString = url.search || "";
-    const targetUrl = `https://api.kroger.com/v1/${apiPath}${queryString}`;
+    
+    // Rebuild query string from req.query (excluding the path param)
+    const qs = new URLSearchParams(queryParams).toString();
+    const targetUrl = `https://api.kroger.com/v1/${apiPath}${qs ? "?" + qs : ""}`;
     
     console.log("[kroger-api] →", targetUrl);
 
@@ -22,9 +23,17 @@ export default async function handler(req, res) {
       },
     });
 
-    const data = await response.json();
-    return res.status(response.status).json(data);
+    const text = await response.text();
+    console.log("[kroger-api] status:", response.status, "body:", text.slice(0, 200));
+    
+    try {
+      const data = JSON.parse(text);
+      return res.status(response.status).json(data);
+    } catch {
+      return res.status(response.status).json({ error: text });
+    }
   } catch (err) {
+    console.error("[kroger-api] error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 }
