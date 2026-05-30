@@ -15,10 +15,8 @@ export default async function handler(req, res) {
 
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-    // The app calls: /kroger-auth/v1/connect/oauth2/token
-    // Strip /api/kroger-auth to get /v1/connect/oauth2/token
-    const stripped = req.url.replace(/^\/api\/kroger-auth/, "") || "/v1/connect/oauth2/token";
-    const targetUrl = `https://api.kroger.com${stripped}`;
+    // Always hit the token endpoint directly — this function only does auth
+    const targetUrl = "https://api.kroger.com/v1/connect/oauth2/token";
 
     console.log("[kroger-auth] →", targetUrl);
 
