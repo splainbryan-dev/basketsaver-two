@@ -1,0 +1,43 @@
+{
+  "name": "BasketSaver",
+  "short_name": "BasketSaver",
+  "description": "Compare your entire grocery cart across 10 major stores. AI finds the cheapest place to shop — stop overpaying for groceries.",
+  "start_url": "/Browse",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#1d4ed8",
+  "lang": "en-US",
+  "categories": ["shopping", "food", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Products",
+      "url": "/Browse",
+      "description": "Search and browse grocery products"
+    },
+    {
+      "name": "My Cart",
+      "url": "/Cart",
+      "description": "View your shopping cart"
+    },
+    {
+      "name": "Compare Prices",
+      "url": "/PriceComparison",
+      "description": "Compare cart prices across all 10 stores"
+    }
+  ]
+}

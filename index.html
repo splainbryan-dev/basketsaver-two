@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA / Theme -->
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="BasketSaver" />
+
+    <!-- SEO / Social -->
+    <meta name="description" content="BasketSaver — AI-powered grocery savings. Compare your entire cart across 10 major stores and find the cheapest place to shop. Stop overpaying for groceries." />
+    <meta name="keywords" content="grocery price comparison, cheapest grocery store, save money groceries, basket price compare, walmart kroger target aldi prices" />
+    <meta property="og:title" content="BasketSaver — AI-Powered Grocery Savings" />
+    <meta property="og:description" content="The only app that compares your entire grocery cart across 10 stores. Find the cheapest place to shop every trip." />
+    <meta property="og:type" content="website" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <title>BasketSaver — Stop Overpaying for Groceries</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Register service worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[SW] Registered:', reg.scope))
+            .catch(err => console.warn('[SW] Registration failed:', err));
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/kroger-auth/:path*",
+      "destination": "/api/kroger-auth"
+    },
+    {
+      "source": "/kroger-api/:path*",
+      "destination": "/api/kroger-api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
