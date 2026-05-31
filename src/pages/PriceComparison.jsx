@@ -171,20 +171,6 @@ export default function PriceComparison() {
             </CardContent>
           </Card>
         )}
-
-        {/* Algorithm transparency */}
-        {!isCalculating && results.length > 0 && (
-          <div className="mb-6 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Prices are sourced from live grocery data.</strong> All other store prices
-              are estimated using our pricing algorithm (store multiplier ×
-              category adjustment). Estimates are typically within 5–15% of
-              actual prices. Submit a receipt after shopping to help us improve!
-            </p>
-          </div>
-        )}
-
         {/* Store results */}
         {!isCalculating && results.map((store, i) => {
           const tier = TIER_LABELS[store.tier];

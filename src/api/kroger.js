@@ -1,22 +1,12 @@
 // src/api/kroger.js
 // Kroger Public API client
-// Hardcoded to Dallas TX Kroger store for consistent product images.
-// Store: Kroger #612 — 7510 Greenville Ave, Dallas TX 75231
-// locationId: 62000112  (Kroger Dallas - Greenville Ave)
-//
-// Using a hardcoded Dallas store means:
-// 1. Images always load (location-specific images are higher quality)
-// 2. Prices are real Dallas Kroger prices (good US national baseline)
-// 3. No zip code needed from user
-// 4. App works instantly on first load
+// On first load, finds a real Kroger store near Dallas TX (75201)
+// and caches the locationId for all subsequent calls.
 
-// Works in both local dev (via Vite proxy) and production (via Vercel functions)
 const KROGER_BASE      = "/kroger-api";
 const KROGER_AUTH_BASE = "/kroger-auth";
 
-// Dallas TX Kroger store — used for all product/price lookups
-export const DEFAULT_LOCATION_ID = "62000112";
-export const DEFAULT_STORE_NAME  = "Kroger - Dallas, TX";
+export const DEFAULT_STORE_NAME = "Kroger";
 
 // ---------- Token cache ----------
 let _tokenCache = { token: null, expiresAt: 0 };
@@ -27,13 +17,9 @@ async function getAccessToken() {
     return _tokenCache.token;
   }
 
-  // Auth is handled server-side by the /kroger-auth proxy.
-  // No client-side credentials needed — the Vercel function reads them from process.env.
   const res = await fetch(`${KROGER_AUTH_BASE}/v1/connect/oauth2/token`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=client_credentials&scope=product.compact",
   });
 
@@ -50,16 +36,56 @@ async function getAccessToken() {
   return _tokenCache.token;
 }
 
+// ---------- Location cache ----------
+let _locationId = null;
+
+// Find nearest Kroger store by zip code
+async function getLocationId(zip = "45202") {
+  if (_locationId) return _locationId;
+
+  try {
+    const token = await getAccessToken();
+    const params = new URLSearchParams({
+      "filter.zipCode.near": zip,
+      "filter.limit": "1",
+      "filter.chain": "KROGER",
+    });
+
+    const res = await fetch(`${KROGER_BASE}/locations?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error(`Location lookup failed: ${res.status}`);
+    const data = await res.json();
+    const stores = data.data || [];
+
+    if (stores.length > 0) {
+      _locationId = stores[0].locationId;
+      console.log("[kroger] Found store:", _locationId, stores[0].name);
+      return _locationId;
+    }
+  } catch (err) {
+    console.warn("[kroger] Location lookup failed, trying without locationId:", err.message);
+  }
+
+  return "62000112"; // Cincinnati OH fallback
+}
+
+export let DEFAULT_LOCATION_ID = null; // Resolved dynamically via getLocationId()
+
 // ---------- Product search ----------
-export async function searchProducts(term, locationId = DEFAULT_LOCATION_ID, limit = 24) {
+export async function searchProducts(term, locationId = null, limit = 24) {
   const token = await getAccessToken();
+  const locId = await getLocationId(); // Always use dynamic lookup — caches after first call
 
   const params = new URLSearchParams({
     "filter.term":        term,
     "filter.limit":       String(limit),
     "filter.fulfillment": "ais",
-    "filter.locationId":  locationId,
   });
+
+  // Only add locationId if we have one
+  if (locId) params.set("filter.locationId", locId);
 
   const res = await fetch(`${KROGER_BASE}/products?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -72,59 +98,47 @@ export async function searchProducts(term, locationId = DEFAULT_LOCATION_ID, lim
 
 // ---------- Products by category ----------
 const CATEGORY_TERMS = {
-  "Meat & Seafood":     "meat seafood",
-  "Fresh Produce":      "fresh produce",
-  "Dairy & Eggs":       "dairy eggs milk",
-  "Bakery & Bread":     "bread bakery",
-  Frozen:               "frozen",
-  Pantry:               "pantry staples canned",
-  "Breakfast & Cereal": "cereal breakfast oatmeal",
-  Baking:               "baking flour sugar",
-  Snacks:               "snacks chips crackers",
-  Candy:                "candy chocolate",
-  Beverages:            "beverages drinks juice soda",
-  Alcohol:              "beer wine spirits",
-  International:        "international ethnic foods",
-  Deli:                 "deli prepared foods",
+  "Meat & Seafood":     ["meat", "chicken", "beef", "seafood", "fish"],
+  "Fresh Produce":      ["apples", "bananas", "lettuce", "tomatoes", "vegetables"],
+  "Dairy & Eggs":       ["milk", "eggs", "cheese", "butter", "yogurt"],
+  "Bakery & Bread":     ["bread", "bagels", "muffins", "rolls"],
+  Frozen:               ["frozen pizza", "frozen meals", "ice cream"],
+  Pantry:               ["canned soup", "pasta sauce", "rice", "beans"],
+  "Breakfast & Cereal": ["cereal", "oatmeal", "granola", "pancake mix"],
+  Baking:               ["flour", "sugar", "baking powder", "vanilla"],
+  Snacks:               ["chips", "crackers", "popcorn", "pretzels"],
+  Candy:                ["chocolate", "candy", "gummies"],
+  Beverages:            ["juice", "soda", "water", "coffee", "tea"],
+  Alcohol:              ["beer", "wine"],
+  International:        ["tortillas", "soy sauce", "salsa"],
+  Deli:                 ["deli meat", "hummus", "cheese"],
 };
 
-export async function getProductsByCategory(category, locationId = DEFAULT_LOCATION_ID, limit = 24) {
-  const term = CATEGORY_TERMS[category] || category.toLowerCase();
-  return searchProducts(term, locationId, limit);
+export async function getProductsByCategory(category, locationId = null, limit = 50, termIndex = 0) {
+  const terms = CATEGORY_TERMS[category] || [category.toLowerCase()];
+  const idx = termIndex % terms.length;
+  const term = terms[idx];
+  const products = await searchProducts(term, locationId, limit);
+  return {
+    products,
+    hasMore: termIndex + 3 < terms.length * 3,
+  };
 }
 
 // ---------- Featured products ----------
-// Loads a variety of popular items for the homepage
-export async function getFeaturedProducts(locationId = DEFAULT_LOCATION_ID, limit = 48) {
-  const token = await getAccessToken();
-
-  // Use broad popular terms to get a good variety
+export async function getFeaturedProducts(locationId = null, limit = 48) {
   const terms = ["chicken", "milk", "bread", "eggs", "fruit", "snacks", "pasta", "cereal"];
-  const term  = terms[Math.floor(Date.now() / 60000) % terms.length]; // Rotates every minute
-
-  const params = new URLSearchParams({
-    "filter.term":        term,
-    "filter.limit":       String(limit),
-    "filter.fulfillment": "ais",
-    "filter.locationId":  locationId,
-  });
-
-  const res = await fetch(`${KROGER_BASE}/products?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) throw new Error(`Featured products failed: ${res.status}`);
-  const data = await res.json();
-  return normalizeProducts(data.data || []);
+  const term  = terms[Math.floor(Date.now() / 60000) % terms.length];
+  return searchProducts(term, locationId, limit);
 }
 
 // ---------- Sale products ----------
-export async function getSaleProducts(locationId = DEFAULT_LOCATION_ID, limit = 24) {
+export async function getSaleProducts(locationId = null, limit = 24) {
   const products = await searchProducts("sale", locationId, limit);
   return products.filter((p) => p.on_sale);
 }
 
-// ---------- Find store by zip (kept for future use) ----------
+// ---------- Find store by zip ----------
 export async function findNearestStore(zipCode) {
   const token = await getAccessToken();
   const params = new URLSearchParams({
@@ -138,8 +152,9 @@ export async function findNearestStore(zipCode) {
   if (!res.ok) throw new Error(`Store lookup failed: ${res.status}`);
   const data = await res.json();
   const stores = data.data || [];
-  if (!stores.length) return null;
+  if (!stores.length) return "62000112"; // Cincinnati OH fallback
   const store = stores[0];
+  _locationId = store.locationId; // Cache it
   return {
     locationId: store.locationId,
     name:       store.name,
@@ -160,7 +175,6 @@ function normalizeProducts(raw) {
       const onSale       = promoPrice !== null && promoPrice < regularPrice;
       const activePrice  = onSale ? promoPrice : regularPrice;
 
-      // Images — prefer large front image
       const images       = item.images || [];
       const frontImages  = images.filter((img) => img.perspective === "front");
       const imageObj     =

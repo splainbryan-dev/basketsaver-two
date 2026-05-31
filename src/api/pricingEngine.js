@@ -39,30 +39,30 @@ export const STORE_DATA_SOURCE = {
 
 // ---------- Store multipliers vs Kroger baseline ----------
 export const STORE_MULTIPLIERS = {
-  "Walmart":      0.93,  // EDLP — consistently cheaper
-  "Aldi":         0.78,  // Private label = much cheaper
-  "Sam's Club":   0.85,  // Bulk savings
-  "Costco":       0.83,  // Bulk savings, quality focus
+  "Walmart":      0.92,  // EDLP — consistently cheaper
+  "Aldi":         0.88,  // Private label cheaper but not always #1
+  "Sam's Club":   0.90,  // Bulk savings
+  "Costco":       0.91,  // Bulk savings, quality focus
   "Kroger":       1.00,  // Baseline
-  "Target":       1.07,  // Convenience premium
-  "H-E-B":        0.96,  // Competitive Texas pricing
-  "Publix":       1.14,  // Service/quality premium
-  "Trader Joe's": 0.97,  // Private label keeps prices down
-  "Whole Foods":  1.35,  // Organic/premium significant markup
+  "Target":       1.06,  // Convenience premium
+  "H-E-B":        0.95,  // Competitive Texas pricing
+  "Publix":       1.12,  // Service/quality premium
+  "Trader Joe's": 0.94,  // Private label keeps prices down
+  "Whole Foods":  1.28,  // Organic/premium significant markup
 };
 
 // Variance range per store — how much individual items deviate from average
 const STORE_VARIANCE_RANGE = {
-  "Walmart":      0.03,  // EDLP — very consistent
-  "Aldi":         0.09,  // Weekly buys vary more
-  "Sam's Club":   0.08,
-  "Costco":       0.09,
-  "Kroger":       0.00,  // Real price — no variance
-  "Target":       0.06,
-  "H-E-B":        0.07,
-  "Publix":       0.07,
-  "Trader Joe's": 0.10,  // Curated selection varies
-  "Whole Foods":  0.13,  // Premium market — most variance
+  "Walmart":      0.06,
+  "Aldi":         0.12,
+  "Sam's Club":   0.10,
+  "Costco":       0.11,
+  "Kroger":       0.00,
+  "Target":       0.08,
+  "H-E-B":        0.09,
+  "Publix":       0.09,
+  "Trader Joe's": 0.13,
+  "Whole Foods":  0.15,
 };
 
 // Category volatility multipliers
