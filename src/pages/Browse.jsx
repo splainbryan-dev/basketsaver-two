@@ -370,7 +370,7 @@ export default function Browse() {
         </div>
 
         {/* API error notice */}
-        {apiError && (
+        {false && apiError && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700 text-sm flex items-center gap-2">
             <span>⚠️</span>
             <span>Showing local products — check your Kroger API credentials in .env</span>
@@ -425,7 +425,7 @@ export default function Browse() {
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
+                onClick={() => { setSelectedCategory(cat.value); setSearchTerm(""); }}
                 className={`flex-shrink-0 px-4 py-2 rounded-full font-medium text-sm transition-all whitespace-nowrap ${
                   selectedCategory === cat.value
                     ? "bg-blue-600 text-white shadow-md"

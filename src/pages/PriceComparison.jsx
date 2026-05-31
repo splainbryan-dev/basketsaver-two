@@ -128,8 +128,7 @@ export default function PriceComparison() {
               Price Comparison
             </h1>
             <p className="text-sm text-gray-500">
-              {cart.length} item{cart.length !== 1 ? "s" : ""} · Kroger prices
-              are real · Others estimated
+              {cart.length} item{cart.length !== 1 ? "s" : ""} · Prices compared across 10 stores
             </p>
           </div>
         </div>
@@ -178,10 +177,7 @@ export default function PriceComparison() {
           <div className="mb-6 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
-              <strong>Kroger prices are real.</strong> All other store prices
-              are estimated using our pricing algorithm (store multiplier ×
-              category adjustment). Estimates are typically within 5–15% of
-              actual prices. Submit a receipt after shopping to help us improve!
+              <strong>Live pricing data</strong> is sourced from Kroger. Prices for other stores are estimated using our smart pricing algorithm and are typically within 5–15% of actual prices. Estimates improve as more users submit receipts.
             </p>
           </div>
         )}
@@ -223,7 +219,7 @@ export default function PriceComparison() {
                       >
                         {tier.label}
                       </span>
-                      {store.name !== "Kroger" && (
+                      {false && store.name !== "Kroger" && (
                         <span className="text-xs text-gray-400">(estimated)</span>
                       )}
                     </div>
