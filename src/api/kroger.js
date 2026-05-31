@@ -15,8 +15,8 @@ const KROGER_BASE      = "/kroger-api";
 const KROGER_AUTH_BASE = "/kroger-auth";
 
 // Dallas TX Kroger store — used for all product/price lookups
-export const DEFAULT_LOCATION_ID = "70100135";
-export const DEFAULT_STORE_NAME  = "Kroger - Columbus, OH (National Baseline)";
+export const DEFAULT_LOCATION_ID = "62000112";
+export const DEFAULT_STORE_NAME  = "Kroger - Dallas, TX";
 
 // ---------- Token cache ----------
 let _tokenCache = { token: null, expiresAt: 0 };
