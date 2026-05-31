@@ -5,15 +5,14 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const { path, ...queryParams } = req.query;
-    const apiPath = Array.isArray(path) ? path.join("/") : path || "";
-
-    // Remove internal Vercel routing params that leak into query
-    delete queryParams["...path"];
-
-    const qs = new URLSearchParams(queryParams).toString();
-    const targetUrl = `https://api.kroger.com/v1/${apiPath}${qs ? "?" + qs : ""}`;
-
+    // Get the path segments from the URL directly
+    // req.url will be like /kroger-api/products?filter.term=milk
+    const fullUrl = req.url;
+    const withoutPrefix = fullUrl.replace(/^\/kroger-api\//, "");
+    const [pathPart, queryPart] = withoutPrefix.split("?");
+    
+    const targetUrl = `https://api.kroger.com/v1/${pathPart}${queryPart ? "?" + queryPart : ""}`;
+    
     console.log("[kroger-api] →", targetUrl);
 
     const response = await fetch(targetUrl, {
