@@ -169,7 +169,7 @@ export default function Cart() {
             <ArrowRight className="w-6 h-6 text-blue-200" />
           </div>
           <div className="mt-3 pt-3 border-t border-blue-500/40 flex items-center justify-between text-sm">
-            <span className="text-blue-200">Kroger baseline</span>
+            <span className="text-blue-200">Current prices</span>
             <span className="font-bold text-lg">${krogerTotal.toFixed(2)}</span>
           </div>
         </button>
@@ -291,7 +291,7 @@ export default function Cart() {
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-gray-500">Kroger total ({totalItems} items)</p>
+            <p className="text-xs text-gray-500">Cart total ({totalItems} items)</p>
             <p className="text-xl font-bold text-gray-900">${krogerTotal.toFixed(2)}</p>
           </div>
           <Button

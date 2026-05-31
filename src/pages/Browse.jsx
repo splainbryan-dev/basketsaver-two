@@ -1,6 +1,5 @@
 // src/pages/Browse.jsx
-// Kroger-powered product catalog using Dallas TX store (locationId: 62000112)
-// Real product images, real Kroger prices, algorithm estimates for 9 other stores.
+// Live grocery product catalog with real prices.
 // No zip code needed — loads automatically.
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -295,18 +294,18 @@ export default function Browse() {
       let more = false;
 
       if (term && term.trim().length > 1) {
-        result = await searchProducts(term, DEFAULT_LOCATION_ID, 50);
+        result = await searchProducts(term, null, 50);
         more = false;
       } else if (category !== "all") {
         // Category mode — paginate through terms with offset
-        const { products, hasMore } = await getProductsByCategory(category, DEFAULT_LOCATION_ID, 50, currentTermIndex);
+        const { products, hasMore } = await getProductsByCategory(category, null, 50, currentTermIndex);
         result = products.filter((p) => !currentSeenIds.has(p.id));
         more = hasMore;
         setTermIndex(currentTermIndex + 3);
       } else {
         // "All" browse mode — rotate through terms
         const browseTerm = ALL_BROWSE_TERMS[currentTermIndex % ALL_BROWSE_TERMS.length];
-        const raw = await searchProducts(browseTerm, DEFAULT_LOCATION_ID, 50);
+        const raw = await searchProducts(browseTerm, null, 50);
         result = raw.filter((p) => !currentSeenIds.has(p.id));
         const nextIndex = currentTermIndex + 1;
         setTermIndex(nextIndex);
@@ -353,7 +352,7 @@ export default function Browse() {
   }, [searchTerm, selectedCategory, loadProducts]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 md:pb-10">
+    <div className="min-h-screen bg-gray-50 pb-48 md:pb-10">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
 
         {/* Hero */}
