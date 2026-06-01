@@ -10,6 +10,12 @@ import {
   Smartphone, Edit2, Save, X, Check,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 function getUser() {
   try { return JSON.parse(localStorage.getItem("basketsaver_user") || "{}"); } catch { return {}; }
@@ -61,8 +67,9 @@ export default function Profile() {
     localStorage.setItem("bs_notifications", String(next));
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (window.confirm("Sign out of BasketSaver?")) {
+      await supabase.auth.signOut();
       localStorage.removeItem("basketsaver_user");
       localStorage.removeItem("welcomeShown");
       navigate("/Auth");

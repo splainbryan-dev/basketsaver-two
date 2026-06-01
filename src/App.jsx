@@ -24,16 +24,14 @@ function getUser() {
 
 function HomeRedirect() {
   const user = getUser();
-  if (!user) return <Navigate to="/Auth" replace />;
-  if (!localStorage.getItem("welcomeShown")) return <Navigate to="/Welcome" replace />;
+  // Always go to Browse — login is optional
+  if (user && !localStorage.getItem("welcomeShown")) return <Navigate to="/Welcome" replace />;
   return <Navigate to="/Browse" replace />;
 }
 
 export default function App() {
-  const user = getUser();
-  // Only show splash on very first ever visit (no user, no welcome flag)
   const [splashDone, setSplashDone] = useState(
-    !!(user || localStorage.getItem("welcomeShown") || localStorage.getItem("basketsaver_users"))
+    !!(getUser() || localStorage.getItem("welcomeShown") || localStorage.getItem("basketsaver_users"))
   );
 
   return (
@@ -42,7 +40,7 @@ export default function App() {
 
       <BrowserRouter>
         <Routes>
-          {/* Auth — standalone */}
+          {/* Auth — standalone, but now opt-in not forced */}
           <Route path="/Auth"    element={<Auth />} />
           <Route path="/Welcome" element={<Welcome />} />
 
@@ -60,12 +58,12 @@ export default function App() {
                 <Route path="/BuyAgain"        element={<BuyAgain />} />
                 <Route path="/Templates"       element={<Templates />} />
                 <Route path="/Orders"          element={<Orders />} />
-              <Route path="/History"         element={<History />} />
-              <Route path="/Budget"          element={<Budget />} />
-              <Route path="/Pantry"          element={<Pantry />} />
-              <Route path="/Profile"         element={<Profile />} />
-              <Route path="/PrivacyPolicy"   element={<PrivacyPolicy />} />
-              <Route path="/TermsOfService"  element={<TermsOfService />} />
+                <Route path="/History"         element={<History />} />
+                <Route path="/Budget"          element={<Budget />} />
+                <Route path="/Pantry"          element={<Pantry />} />
+                <Route path="/Profile"         element={<Profile />} />
+                <Route path="/PrivacyPolicy"   element={<PrivacyPolicy />} />
+                <Route path="/TermsOfService"  element={<TermsOfService />} />
                 <Route path="*"               element={<Navigate to="/Browse" replace />} />
               </Routes>
             </Layout>
