@@ -134,6 +134,11 @@ export default function Layout({ children }) {
             <Link
               key={name}
               to={path}
+              onClick={() => {
+                if (name === "Browse" && isActive(path)) {
+                  window.dispatchEvent(new Event("browseScrollTop"));
+                }
+              }}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 relative transition-colors ${
                 isActive(path) ? "text-blue-600" : "text-gray-400"
               }`}
