@@ -224,44 +224,6 @@ function ProductSkeleton() {
 }
 
 // ── Cart banner ──────────────────────────────────────────────────
-function CartBanner({ navigate }) {
-  const [count, setCount] = useState(0);
-  const [total, setTotal] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      setCount(cart.reduce((s, i) => s + i.quantity, 0));
-      setTotal(cart.reduce((s, i) => s + (i.price || 0) * i.quantity, 0));
-    };
-    update();
-    window.addEventListener("cartUpdated", update);
-    return () => window.removeEventListener("cartUpdated", update);
-  }, []);
-
-  if (count === 0) return null;
-
-  return (
-    <div className="fixed bottom-16 md:bottom-6 left-4 right-4 z-40 max-w-lg mx-auto">
-      <button
-        onClick={() => navigate(createPageUrl("Cart"))}
-        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between hover:from-blue-700 hover:to-indigo-700 transition-all active:scale-98"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold text-sm">{count}</div>
-          <div className="text-left">
-            <p className="font-semibold text-sm">View Cart & Compare</p>
-            <p className="text-blue-200 text-xs">Find the cheapest store</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="font-bold">${total.toFixed(2)}</p>
-
-        </div>
-      </button>
-    </div>
-  );
-}
 
 // Rotating search terms for "All" category Load More — keeps results fresh
 const ALL_BROWSE_TERMS = [
@@ -284,6 +246,8 @@ export default function Browse() {
   const [termIndex, setTermIndex]               = useState(0);
   const [seenIds, setSeenIds]                   = useState(new Set());
   const searchTimeout                           = useRef(null);
+  const searchInputRef                          = useRef(null);
+  const pageTopRef                              = useRef(null);
 
   const loadProducts = useCallback(async (term, category, append = false, currentTermIndex = 0, currentSeenIds = new Set()) => {
     if (!append) setLoading(true);
@@ -295,18 +259,27 @@ export default function Browse() {
       let more = false;
 
       if (term && term.trim().length > 1) {
-        result = await searchProducts(term, DEFAULT_LOCATION_ID, 50);
+        const raw = await searchProducts(term, null, 50);
+        // Sort: exact name matches first, then starts-with, then contains
+        const t = term.toLowerCase().trim();
+        result = raw.sort((a, b) => {
+          const an = (a.name || "").toLowerCase();
+          const bn = (b.name || "").toLowerCase();
+          const aExact = an === t ? 0 : an.startsWith(t) ? 1 : an.split(" ")[0] === t ? 2 : 3;
+          const bExact = bn === t ? 0 : bn.startsWith(t) ? 1 : bn.split(" ")[0] === t ? 2 : 3;
+          return aExact - bExact;
+        });
         more = false;
       } else if (category !== "all") {
         // Category mode — paginate through terms with offset
-        const { products, hasMore } = await getProductsByCategory(category, DEFAULT_LOCATION_ID, 50, currentTermIndex);
+        const { products, hasMore } = await getProductsByCategory(category, null, 50, currentTermIndex);
         result = products.filter((p) => !currentSeenIds.has(p.id));
-        more = hasMore;
+        more = true; // Always allow load more in category mode
         setTermIndex(currentTermIndex + 3);
       } else {
         // "All" browse mode — rotate through terms
         const browseTerm = ALL_BROWSE_TERMS[currentTermIndex % ALL_BROWSE_TERMS.length];
-        const raw = await searchProducts(browseTerm, DEFAULT_LOCATION_ID, 50);
+        const raw = await searchProducts(browseTerm, null, 50);
         result = raw.filter((p) => !currentSeenIds.has(p.id));
         const nextIndex = currentTermIndex + 1;
         setTermIndex(nextIndex);
@@ -340,6 +313,13 @@ export default function Browse() {
     }
   }, []);
 
+  // Scroll to top when Browse nav is clicked
+  useEffect(() => {
+    const handler = () => pageTopRef.current?.scrollIntoView({ behavior: "smooth" });
+    window.addEventListener("browseScrollTop", handler);
+    return () => window.removeEventListener("browseScrollTop", handler);
+  }, []);
+
   // Debounced search/category change — reset term rotation
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -353,7 +333,7 @@ export default function Browse() {
   }, [searchTerm, selectedCategory, loadProducts]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-48 md:pb-10">
+    <div ref={pageTopRef} className="min-h-screen bg-gray-50 pb-64 md:pb-10">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
 
         {/* Hero */}
@@ -381,10 +361,19 @@ export default function Browse() {
         <div className="mb-4 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            type="text"
+            ref={searchInputRef}
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
             placeholder='Search products... (e.g. "chicken breast", "oreos", "whole milk")'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                searchInputRef.current?.blur();
+              }
+            }}
             className="pl-11 pr-24 h-13 rounded-full border-2 border-blue-200 shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white text-sm md:text-base"
             autoFocus={false}
           />
@@ -472,7 +461,7 @@ export default function Browse() {
             </div>
 
             {hasMore && (
-              <div className="text-center mt-8">
+              <div className="text-center mt-8 mb-16">
                 <button
                   onClick={() => loadProducts(searchTerm, selectedCategory, true, termIndex, seenIds)}
                   disabled={loadingMore}
@@ -489,7 +478,6 @@ export default function Browse() {
         )}
       </div>
 
-      <CartBanner navigate={navigate} />
     </div>
   );
 }
