@@ -39,6 +39,24 @@ export default function Profile() {
   const [user, setUser]               = useState(getUser());
   const [stats, setStats]             = useState(getStats());
   const [editingName, setEditingName] = useState(false);
+
+  // Sync Supabase session → localStorage on mount (handles Google OAuth)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = {
+          id:    session.user.id,
+          name:  session.user.user_metadata?.full_name ||
+                 session.user.user_metadata?.name ||
+                 session.user.email?.split("@")[0] || "User",
+          email: session.user.email,
+        };
+        localStorage.setItem("basketsaver_user", JSON.stringify(u));
+        localStorage.setItem("welcomeShown", "true");
+        setUser(u);
+      }
+    });
+  }, []);
   const [newName, setNewName]         = useState("");
   const [notifications, setNotifications] = useState(
     localStorage.getItem("bs_notifications") !== "false"
