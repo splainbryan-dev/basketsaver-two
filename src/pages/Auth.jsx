@@ -48,7 +48,7 @@ export default function Auth() {
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}${createPageUrl("Browse")}`,
+        redirectTo: "https://basketsaver-two.vercel.app/Browse",
       },
     });
     if (err) {
