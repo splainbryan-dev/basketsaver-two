@@ -357,6 +357,15 @@ const CATEGORY_BASELINE_PRICES = {
 };
 
 export function getKrogerBaseline(product) {
+  // Use original_price as baseline for comparison (sale price is Kroger-specific discount)
+  // This prevents sale items from artificially lowering all store estimates
+  const known = product.original_price ?? product.kroger_price ?? product.price;
+  if (known && known > 0) return known;
+  return CATEGORY_BASELINE_PRICES[product.category] ?? 3.99;
+}
+
+export function getKrogerSalePrice(product) {
+  // Actual price the user pays at Kroger (may be on sale)
   const known = product.kroger_price ?? product.price;
   if (known && known > 0) return known;
   return CATEGORY_BASELINE_PRICES[product.category] ?? 3.99;
@@ -440,6 +449,7 @@ export function compareCartAcrossStores(cartItems) {
   for (const { product, quantity = 1 } of cartItems) {
     const itemPrices  = estimatePricesForProduct(product);
     const krogerPrice = getKrogerBaseline(product);
+    const krogerSalePrice = getKrogerSalePrice(product);
     const productId   = product.id ?? product.name ?? "unknown";
     for (const store of STORES_ORDERED) {
       const missing = store !== "Kroger" && isMissingItem(productId, store);
@@ -449,7 +459,8 @@ export function compareCartAcrossStores(cartItems) {
         storeMissingCost[store] += penalty;
         storeItems[store].push({ product_name: product.name, estimated_price: krogerPrice * 1.20, quantity, available: false, note: "May not carry" });
       } else {
-        const price = itemPrices[store] ?? krogerPrice;
+        // Use actual sale price for Kroger, estimated price for others
+        const price = store === "Kroger" ? krogerSalePrice : (itemPrices[store] ?? krogerPrice);
         storeTotals[store] += price * quantity;
         storeItems[store].push({ product_name: product.name, estimated_price: price, quantity, available: true });
       }

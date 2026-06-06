@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Plus, Minus, Heart, ChevronDown, ChevronUp,
-  X, Loader2, Tag, Flame, TrendingDown, Bell, Ticket,
+  X, Loader2, Tag, Flame,
   ShoppingCart, ChevronRight,
 } from "lucide-react";
 import {
@@ -32,9 +32,7 @@ const CATEGORY_ICONS = {
 
 // Deal tabs
 const DEAL_TABS = [
-  { id: "hot",   label: "🔥 Deals",        icon: Flame },
-  { id: "drops", label: "💸 Price Drops",  icon: TrendingDown },
-  { id: "coupon",label: "🎟 Coupons",      icon: Ticket },
+  { id: "hot", label: "🔥 This Week's Deals", icon: Flame },
 ];
 
 // ── Deal Card ─────────────────────────────────────────────────────
@@ -399,7 +397,7 @@ export default function Browse() {
                 </div>
                 <div>
                   <h2 className="font-black text-gray-900 text-base leading-none">This Week's Deals</h2>
-                  <p className="text-xs text-gray-400">Updated daily from Kroger</p>
+                  <p className="text-xs text-gray-400">Updated daily</p>
                 </div>
               </div>
               <button
@@ -416,22 +414,7 @@ export default function Browse() {
               </button>
             </div>
 
-            {/* Deal tabs */}
-            <div className="flex gap-2 mb-3">
-              {DEAL_TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                    activeTab === tab.id
-                      ? "bg-red-500 text-white shadow-sm"
-                      : "bg-white text-gray-600 border border-gray-200"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+
 
             {/* Deal products horizontal scroll */}
             {dealsLoading ? (
@@ -448,10 +431,15 @@ export default function Browse() {
                 ))}
               </div>
             ) : filteredDeals.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
-                {filteredDeals.map(product => (
-                  <DealCard key={product.id} product={product} onAddToCart={addToCart} />
-                ))}
+              <div className="relative">
+                <div className="flex gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: "thin", scrollbarColor: "#cbd5e1 transparent" }}>
+                  {filteredDeals.map(product => (
+                    <DealCard key={product.id} product={product} onAddToCart={addToCart} />
+                  ))}
+                </div>
+                {filteredDeals.length > 2 && (
+                  <p className="text-[10px] text-gray-400 text-center mt-1">← swipe for more deals →</p>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
