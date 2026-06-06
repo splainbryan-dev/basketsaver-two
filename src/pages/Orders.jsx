@@ -88,7 +88,7 @@ export default function Orders() {
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div>
-                  <p className="text-xs text-gray-500">{order.item_count} items · Kroger est.</p>
+                  <p className="text-xs text-gray-500">{order.item_count} items · est. total</p>
                   <p className="text-lg font-bold text-green-600">${order.estimated_total?.toFixed(2)}</p>
                 </div>
                 <div className="flex gap-2">
