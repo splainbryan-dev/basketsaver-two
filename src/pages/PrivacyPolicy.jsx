@@ -64,12 +64,12 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-2">6. Your Rights</h2>
-            <p>You have the right to access, correct, or delete your personal data at any time. Contact us at privacy@basketsaver.app to exercise these rights.</p>
+            <p>You have the right to access, correct, or delete your personal data at any time. Contact us at splainbryan@gmail.com to exercise these rights.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-2">7. Contact</h2>
-            <p>Questions about this policy? Contact us at <span className="text-blue-600">privacy@basketsaver.app</span></p>
+            <p>Questions about this policy? Contact us at <span className="text-blue-600">splainbryan@gmail.com</span></p>
           </section>
         </div>
       </div>
