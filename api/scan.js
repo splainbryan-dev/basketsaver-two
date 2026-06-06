@@ -70,6 +70,9 @@ If you cannot identify the product, return: {"name":"Unknown Product","price":0,
     return res.status(200).json(parsed);
   } catch (err) {
     console.error("Scan error:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(200).json({ 
+      store_name: null, receipt_date: null, receipt_total: null, items: [],
+      _debug: `Catch error: ${err.message}`
+    });
   }
 }
