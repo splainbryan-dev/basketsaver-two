@@ -6,22 +6,11 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, Sparkles, Package, Plus } from "lucide-react";
+import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, Package, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const REWARDS_KEY = "basketsaver_rewards";
 
-function addPoints(type) {
-  const r = JSON.parse(localStorage.getItem(REWARDS_KEY) || "{}");
-  const pts = type === "receipt" ? 50 : 10;
-  r.total_points = (r.total_points || 0) + pts;
-  if (type === "receipt") r.receipts_scanned = (r.receipts_scanned || 0) + 1;
-  else r.products_contributed = (r.products_contributed || 0) + 1;
-  localStorage.setItem(REWARDS_KEY, JSON.stringify(r));
-  return pts;
-}
 
 function addToCart(product) {
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -98,7 +87,6 @@ export default function ScanProduct() {
   const [results, setResults]             = useState([]);
   const [error, setError]                 = useState(null);
   const [success, setSuccess]             = useState(false);
-  const [pointsEarned, setPointsEarned]   = useState(0);
   const [addedIds, setAddedIds]           = useState({});
 
   const handleFileSelect = async (e, scanMode) => {
@@ -126,10 +114,6 @@ export default function ScanProduct() {
 
       const items = Array.isArray(parsed) ? parsed : [parsed];
       setResults(items);
-
-      // Award points
-      const pts = addPoints(scanMode);
-      setPointsEarned(pts);
       setSuccess(true);
     } catch (err) {
       console.error("Scan error:", err);
@@ -159,7 +143,6 @@ export default function ScanProduct() {
     setResults([]);
     setError(null);
     setSuccess(false);
-    setPointsEarned(0);
     setAddedIds({});
     if (fileInputRef.current)    fileInputRef.current.value = "";
     if (productInputRef.current) productInputRef.current.value = "";
@@ -195,7 +178,6 @@ export default function ScanProduct() {
               </div>
               <h3 className="font-bold text-gray-900 mb-1">Scan Receipt</h3>
               <p className="text-xs text-gray-500 mb-3">Extract all items from a grocery receipt</p>
-              <Badge className="bg-green-500 text-white">+50 points</Badge>
             </div>
           </label>
 
@@ -214,7 +196,6 @@ export default function ScanProduct() {
               </div>
               <h3 className="font-bold text-gray-900 mb-1">Scan Product</h3>
               <p className="text-xs text-gray-500 mb-3">Photo a product to identify and add to cart</p>
-              <Badge className="bg-blue-600 text-white">+10 points</Badge>
             </div>
           </label>
         </div>
@@ -255,10 +236,9 @@ export default function ScanProduct() {
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="w-5 h-5" />
               <span className="font-semibold">
-                Found {results.length} item{results.length !== 1 ? "s" : ""} · +{pointsEarned} points earned!
+                Found {results.length} item{results.length !== 1 ? "s" : ""}
               </span>
             </div>
-            <button onClick={() => navigate(createPageUrl("Rewards"))} className="text-xs text-purple-600 underline">View rewards</button>
           </div>
 
           <div className="space-y-2">
@@ -317,22 +297,7 @@ export default function ScanProduct() {
         </div>
       )}
 
-      {/* Points info at bottom */}
-      {!previewUrl && (
-        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-purple-600 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-gray-900">Earn Points with Every Scan</p>
-                <p className="text-sm text-gray-600">
-                  Scan receipts (+50 pts) or products (+10 pts) to build your rewards balance and help improve price accuracy for everyone.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
     </div>
   );
 }
