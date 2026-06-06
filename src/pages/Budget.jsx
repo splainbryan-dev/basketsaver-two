@@ -6,8 +6,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  DollarSign, TrendingDown, TrendingUp, AlertCircle,
-  CheckCircle2, Edit2, Save, X, ShoppingBag, ArrowRight,
+  DollarSign, AlertCircle,
+  CheckCircle2, Edit2, Save, ShoppingBag, ArrowRight,
   PiggyBank, Calendar, BarChart2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,24 +104,9 @@ export default function Budget() {
   };
 
   const daysLeft     = getDaysInMonth() - getDayOfMonth();
-  const daysTotal    = getDaysInMonth();
-  const dayOfMonth   = getDayOfMonth();
-  const paceSpend    = (spend.total / dayOfMonth) * daysTotal;
-  const remaining    = budget.monthly - spend.total;
   const pct          = Math.min(Math.round((spend.total / budget.monthly) * 100), 100);
-  const dailyLeft    = daysLeft > 0 ? remaining / daysLeft : 0;
-  const onPace       = paceSpend <= budget.monthly;
   const overBudget   = spend.total > budget.monthly;
-
-  // Status
-  const status = overBudget ? "over" : pct >= 85 ? "warning" : "good";
-  const statusConfig = {
-    good:    { color: "text-green-600",  bg: "bg-green-50  border-green-200",  icon: CheckCircle2, msg: "You're on track! " },
-    warning: { color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200", icon: AlertCircle,  msg: "Getting close to your budget" },
-    over:    { color: "text-red-600",    bg: "bg-red-50    border-red-200",    icon: AlertCircle,  msg: "Over budget this month" },
-  };
-  const s = statusConfig[status];
-  const StatusIcon = s.icon;
+  const remaining    = budget.monthly - spend.total;
 
   // No spend yet
   const noData = spend.total === 0;
@@ -153,7 +138,7 @@ export default function Budget() {
         </div>
 
         {/* Main budget card */}
-        <Card className={`mb-6 border-2 ${s.bg}`}>
+        <Card className={`mb-6 border-2 ${overBudget ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"}`}>
           <CardContent className="p-5">
             {editing ? (
               <div>
@@ -199,70 +184,14 @@ export default function Budget() {
                     <span>{daysLeft} days left</span>
                   </div>
                 </div>
-
-                {/* Status */}
-                <div className={`flex items-center gap-2 p-3 rounded-xl ${s.bg} border`}>
-                  <StatusIcon className={`w-4 h-4 ${s.color} flex-shrink-0`} />
-                  <p className={`text-sm font-medium ${s.color}`}>{s.msg}</p>
-                </div>
               </>
             )}
           </CardContent>
         </Card>
 
-        {/* Stats row */}
-        {!noData && (
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <Card className="border border-gray-200 text-center">
-              <CardContent className="p-3">
-                <p className={`text-xl font-black ${remaining < 0 ? "text-red-600" : "text-green-600"}`}>
-                  ${Math.abs(remaining).toFixed(0)}
-                </p>
-                <p className="text-xs text-gray-500">{remaining < 0 ? "over" : "remaining"}</p>
-              </CardContent>
-            </Card>
-            <Card className="border border-gray-200 text-center">
-              <CardContent className="p-3">
-                <p className="text-xl font-black text-blue-600">${dailyLeft.toFixed(0)}</p>
-                <p className="text-xs text-gray-500">per day left</p>
-              </CardContent>
-            </Card>
-            <Card className="border border-gray-200 text-center">
-              <CardContent className="p-3">
-                <p className={`text-xl font-black ${onPace ? "text-green-600" : "text-red-600"}`}>
-                  ${paceSpend.toFixed(0)}
-                </p>
-                <p className="text-xs text-gray-500">month pace</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
-        {/* Pace indicator */}
-        {!noData && (
-          <Card className={`mb-6 border ${onPace ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-            <CardContent className="p-4 flex items-center gap-3">
-              {onPace
-                ? <TrendingDown className="w-8 h-8 text-green-600 flex-shrink-0" />
-                : <TrendingUp className="w-8 h-8 text-red-500 flex-shrink-0" />
-              }
-              <div>
-                <p className={`font-bold ${onPace ? "text-green-800" : "text-red-700"}`}>
-                  {onPace
-                    ? `At this pace you'll spend $${paceSpend.toFixed(0)} this month`
-                    : `At this pace you'll go $${(paceSpend - budget.monthly).toFixed(0)} over budget`
-                  }
-                </p>
-                <p className="text-sm text-gray-500">
-                  {onPace
-                    ? `$${(budget.monthly - paceSpend).toFixed(0)} under your $${budget.monthly} budget`
-                    : "Consider switching to cheaper store alternatives"
-                  }
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
+
 
         {/* Category budgets */}
         <Card className="mb-6 border border-gray-200">
