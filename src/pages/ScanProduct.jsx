@@ -1,16 +1,10 @@
 // src/pages/ScanProduct.jsx
-// Receipt and product photo scanning using the Anthropic API (Claude vision).
-// Replaces Base44's InvokeLLM + UploadFile with a direct fetch to api.anthropic.com.
-// Points awarded to localStorage rewards on successful scan.
-
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, Package, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-
+import { supabase, getUserId } from "@/lib/supabase";
 
 function addToCart(product) {
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -32,7 +26,6 @@ function addToCart(product) {
   window.dispatchEvent(new Event("cartUpdated"));
 }
 
-// Call Claude via the Anthropic API to analyze an image
 async function analyzeImage(base64Data, mediaType, mode) {
   const prompt = mode === "receipt"
     ? `You are analyzing a grocery receipt image. Extract ALL products listed on this receipt.
@@ -41,13 +34,16 @@ For each product, extract:
 - price (numeric, the item price)
 - quantity (how many, default 1)
 - category (one of: Dairy & Eggs, Meat & Seafood, Fresh Produce, Bakery & Bread, Pantry, Frozen, Breakfast & Cereal, Snacks, Beverages, Deli, Candy, Baking, Alcohol, International)
+- store_name (the store name if visible at top of receipt, otherwise null)
+- receipt_date (date on receipt in YYYY-MM-DD format if visible, otherwise null)
+- receipt_total (the final total on the receipt if visible, otherwise null)
 
-Respond ONLY with a JSON array, no markdown, no extra text:
-[{"name":"...","price":0.00,"quantity":1,"category":"..."}]
+Respond ONLY with a JSON object, no markdown:
+{"store_name": null, "receipt_date": null, "receipt_total": null, "items": [{"name":"...","price":0.00,"quantity":1,"category":"..."}]}
 
-If you cannot read the receipt clearly, return an empty array: []`
+If you cannot read the receipt clearly, return: {"store_name":null,"receipt_date":null,"receipt_total":null,"items":[]}`
     : `You are analyzing a grocery product photo. Extract the product details.
-Respond ONLY with JSON, no markdown, no extra text:
+Respond ONLY with JSON, no markdown:
 {"name":"product name","brand":"brand if visible","price":0.00,"category":"one of: Dairy & Eggs, Meat & Seafood, Fresh Produce, Bakery & Bread, Pantry, Frozen, Breakfast & Cereal, Snacks, Beverages, Deli, Candy, Baking, Alcohol, International","size":"size/weight if visible","description":"brief description"}
 If you cannot identify the product, return: {"name":"Unknown Product","price":0,"category":"Pantry"}`;
 
@@ -56,7 +52,7 @@ If you cannot identify the product, return: {"name":"Unknown Product","price":0,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
+      max_tokens: 1500,
       messages: [{
         role: "user",
         content: [
@@ -70,10 +66,60 @@ If you cannot identify the product, return: {"name":"Unknown Product","price":0,
   if (!response.ok) throw new Error(`API error ${response.status}`);
   const data = await response.json();
   const text = data.content?.map((c) => c.text || "").join("") || "";
-
-  // Strip any accidental markdown fences
   const clean = text.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
+}
+
+async function saveReceiptToSupabase(parsed, userId) {
+  try {
+    // Save receipt header
+    const { data: receipt, error: receiptError } = await supabase
+      .from("receipts")
+      .insert({
+        user_id:      userId,
+        store_name:   parsed.store_name || null,
+        scan_date:    parsed.receipt_date || new Date().toISOString().split("T")[0],
+        total_amount: parsed.receipt_total || null,
+      })
+      .select()
+      .single();
+
+    if (receiptError) throw receiptError;
+
+    // Save individual items
+    const items = (parsed.items || []).map((item) => ({
+      receipt_id: receipt.id,
+      user_id:    userId,
+      name:       item.name,
+      price:      item.price || 0,
+      quantity:   item.quantity || 1,
+      category:   item.category || "Pantry",
+    }));
+
+    if (items.length > 0) {
+      const { error: itemsError } = await supabase.from("receipt_items").insert(items);
+      if (itemsError) throw itemsError;
+    }
+
+    return receipt.id;
+  } catch (err) {
+    console.error("Supabase save error:", err);
+    return null;
+  }
+}
+
+async function saveProductToSupabase(product, userId) {
+  try {
+    await supabase.from("receipt_items").insert({
+      user_id:  userId,
+      name:     product.name,
+      price:    product.price || 0,
+      quantity: 1,
+      category: product.category || "Pantry",
+    });
+  } catch (err) {
+    console.error("Supabase save error:", err);
+  }
 }
 
 export default function ScanProduct() {
@@ -81,13 +127,14 @@ export default function ScanProduct() {
   const fileInputRef    = useRef(null);
   const productInputRef = useRef(null);
 
-  const [mode, setMode]                   = useState(null); // "receipt" | "product"
+  const [mode, setMode]                   = useState(null);
   const [previewUrl, setPreviewUrl]       = useState(null);
   const [isProcessing, setIsProcessing]   = useState(false);
   const [results, setResults]             = useState([]);
   const [error, setError]                 = useState(null);
   const [success, setSuccess]             = useState(false);
   const [addedIds, setAddedIds]           = useState({});
+  const [savedToDb, setSavedToDb]         = useState(false);
 
   const handleFileSelect = async (e, scanMode) => {
     const file = e.target.files?.[0];
@@ -98,10 +145,10 @@ export default function ScanProduct() {
     setResults([]);
     setError(null);
     setSuccess(false);
+    setSavedToDb(false);
     setIsProcessing(true);
 
     try {
-      // Convert to base64
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader();
         reader.onload = () => res(reader.result.split(",")[1]);
@@ -111,10 +158,33 @@ export default function ScanProduct() {
 
       const mediaType = file.type || "image/jpeg";
       const parsed = await analyzeImage(base64, mediaType, scanMode);
+      const userId = getUserId();
 
-      const items = Array.isArray(parsed) ? parsed : [parsed];
-      setResults(items);
-      setSuccess(true);
+      if (scanMode === "receipt") {
+        const items = parsed.items || [];
+        setResults(items);
+        setSuccess(true);
+        // Save to Supabase in background
+        saveReceiptToSupabase(parsed, userId).then((id) => {
+          if (id) setSavedToDb(true);
+        });
+        // Also save to localStorage for offline history
+        const history = JSON.parse(localStorage.getItem("bs_purchase_history") || "[]");
+        history.push({
+          id: Date.now().toString(),
+          date: parsed.receipt_date || new Date().toISOString(),
+          store: parsed.store_name || "Unknown Store",
+          items: items.map(i => ({ ...i, product_name: i.name, product_id: `scan-${Date.now()}-${Math.random()}` })),
+          total: parsed.receipt_total || items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0),
+          saved: 0,
+        });
+        localStorage.setItem("bs_purchase_history", JSON.stringify(history));
+      } else {
+        const product = Array.isArray(parsed) ? parsed[0] : parsed;
+        setResults([product]);
+        setSuccess(true);
+        saveProductToSupabase(product, userId);
+      }
     } catch (err) {
       console.error("Scan error:", err);
       setError(
@@ -143,6 +213,7 @@ export default function ScanProduct() {
     setResults([]);
     setError(null);
     setSuccess(false);
+    setSavedToDb(false);
     setAddedIds({});
     if (fileInputRef.current)    fileInputRef.current.value = "";
     if (productInputRef.current) productInputRef.current.value = "";
@@ -156,7 +227,7 @@ export default function ScanProduct() {
           <Camera className="w-6 h-6 text-blue-600" /> Scan Products & Receipts
         </h1>
         <p className="text-gray-500 text-sm">
-          AI-powered scanning — earn points and add items to your cart instantly
+          AI-powered scanning — add items to your cart and track your spending
         </p>
       </div>
 
@@ -177,7 +248,7 @@ export default function ScanProduct() {
                 <Upload className="w-7 h-7 text-white" />
               </div>
               <h3 className="font-bold text-gray-900 mb-1">Scan Receipt</h3>
-              <p className="text-xs text-gray-500 mb-3">Extract all items from a grocery receipt</p>
+              <p className="text-xs text-gray-500">Extract all items and track your spending</p>
             </div>
           </label>
 
@@ -195,7 +266,7 @@ export default function ScanProduct() {
                 <Camera className="w-7 h-7 text-white" />
               </div>
               <h3 className="font-bold text-gray-900 mb-1">Scan Product</h3>
-              <p className="text-xs text-gray-500 mb-3">Photo a product to identify and add to cart</p>
+              <p className="text-xs text-gray-500">Photo a product to identify and add to cart</p>
             </div>
           </label>
         </div>
@@ -237,6 +308,7 @@ export default function ScanProduct() {
               <CheckCircle2 className="w-5 h-5" />
               <span className="font-semibold">
                 Found {results.length} item{results.length !== 1 ? "s" : ""}
+                {savedToDb && <span className="text-xs text-gray-400 ml-2">· saved to your history</span>}
               </span>
             </div>
           </div>
@@ -296,8 +368,6 @@ export default function ScanProduct() {
           </button>
         </div>
       )}
-
-
     </div>
   );
 }
