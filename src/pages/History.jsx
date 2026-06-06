@@ -9,11 +9,10 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   TrendingDown, TrendingUp, ShoppingBag, Calendar,
-  BarChart2, MapPin, Star, Flame, ArrowRight,
-  DollarSign, Package, Store, ChevronDown, ChevronUp,
+  BarChart2, Star, ArrowRight,
+  DollarSign, Package, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 // ── Data helpers ─────────────────────────────────────────────────
 
@@ -119,16 +118,7 @@ function buildAnalytics() {
   };
 }
 
-// ── Trending data (simulated regional trends) ────────────────────
-// In production this would come from aggregated anonymous user data
-const TRENDING = [
-  { name: "Tajín Seasoning",       trend: "+340%", region: "TX, AZ, CA",  hot: true  },
-  { name: "Goya Black Beans",      trend: "+180%", region: "FL, NY, TX",  hot: true  },
-  { name: "Oat Milk",              trend: "+120%", region: "Nationwide",  hot: true  },
-  { name: "Store Brand Cereal",    trend: "+89%",  region: "Nationwide",  hot: false },
-  { name: "Fresh Salmon",          trend: "+67%",  region: "West Coast",  hot: false },
-  { name: "Name Brand Soda",       trend: "-34%",  region: "Nationwide",  hot: false },
-];
+
 
 // ── Components ───────────────────────────────────────────────────
 
@@ -190,13 +180,7 @@ export default function History() {
             </CardContent>
           </Card>
 
-          {/* Trending section even with no history */}
-          <div className="mt-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-500" /> Trending Near You
-            </h2>
-            <TrendingSection />
-          </div>
+
         </div>
       </div>
     );
@@ -283,33 +267,7 @@ export default function History() {
           </Card>
         )}
 
-        {/* Store preferences */}
-        {Object.keys(data.storeCounts).length > 0 && (
-          <Card className="mb-6 border border-gray-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Store className="w-4 h-4 text-green-500" /> Your Favorite Stores
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="space-y-2">
-                {Object.entries(data.storeCounts)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([store, count]) => (
-                    <div key={store} className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-gray-700">{store}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">{count} trip{count !== 1 ? "s" : ""}</span>
-                        {store === data.topStore && (
-                          <Badge className="bg-yellow-400 text-yellow-900 text-[10px]">⭐ Favorite</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Most purchased items */}
         {data.topItems.length > 0 && (
@@ -351,14 +309,6 @@ export default function History() {
           </Card>
         )}
 
-        {/* Trending near you */}
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" /> Trending Near You
-          </h2>
-          <TrendingSection />
-        </div>
-
         {/* Data privacy note */}
         <div className="bg-gray-100 rounded-xl p-4 text-xs text-gray-500 text-center">
           🔒 Your purchase history is stored privately on your device.
@@ -370,34 +320,3 @@ export default function History() {
   );
 }
 
-function TrendingSection() {
-  return (
-    <div className="space-y-3">
-      {TRENDING.map((item) => {
-        const up = item.trend.startsWith("+");
-        return (
-          <div key={item.name} className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {item.hot
-                ? <Flame className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                : <TrendingDown className="w-4 h-4 text-blue-400 flex-shrink-0" />
-              }
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">{item.name}</p>
-                <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> {item.region}
-                </p>
-              </div>
-            </div>
-            <span className={`font-bold text-sm ${up ? "text-green-600" : "text-red-500"}`}>
-              {item.trend}
-            </span>
-          </div>
-        );
-      })}
-      <p className="text-xs text-gray-400 text-center pt-1">
-        Based on anonymized BasketSaver purchase data
-      </p>
-    </div>
-  );
-}
