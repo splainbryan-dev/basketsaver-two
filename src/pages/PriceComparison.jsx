@@ -152,9 +152,6 @@ export default function PriceComparison() {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${tier.color}`}>
                         {tier.label}
                       </span>
-                      {store.missing_penalty > 0 && (
-                        <span className="text-[10px] text-orange-500">⚠️ may not carry all items</span>
-                      )}
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {i === 0 && totalSavings > 0
@@ -182,12 +179,11 @@ export default function PriceComparison() {
                     <div className="space-y-1">
                       {store.items.map((item, j) => (
                         <div key={j} className="flex justify-between text-xs">
-                          <span className={`truncate flex-1 mr-2 ${!item.available ? "text-orange-400 italic" : "text-gray-600"}`}>
+                          <span className="truncate flex-1 mr-2 text-gray-600">
                             {item.product_name || item.name}
                             {item.quantity > 1 && <span className="text-gray-400"> × {item.quantity}</span>}
-                            {!item.available && <span className="ml-1 text-[10px]">(substitute)</span>}
                           </span>
-                          <span className={`font-medium flex-shrink-0 ${!item.available ? "text-orange-400" : "text-gray-800"}`}>
+                          <span className="font-medium flex-shrink-0 text-gray-800">
                             ${(item.estimated_price * item.quantity).toFixed(2)}
                           </span>
                         </div>
@@ -219,8 +215,8 @@ export default function PriceComparison() {
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-7 h-7 text-purple-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Help improve estimates</p>
-                    <p className="text-xs text-gray-500">Scan your receipt to contribute real prices</p>
+                    <p className="font-semibold text-gray-900 text-sm">Scan your receipt</p>
+                    <p className="text-xs text-gray-500">Get accurate budget tracking for your household</p>
                   </div>
                 </div>
                 <Button
