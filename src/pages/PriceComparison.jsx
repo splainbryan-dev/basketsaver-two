@@ -32,7 +32,7 @@ export default function PriceComparison() {
     if (cartData.length > 0) runComparison(cartData);
   }, []);
 
-  const runComparison = (cartItems) => {
+  const runComparison = async (cartItems) => {
     setIsCalculating(true);
     const engineInput = cartItems.map(item => ({
       product: {
@@ -43,11 +43,33 @@ export default function PriceComparison() {
       },
       quantity: item.quantity,
     }));
-    setTimeout(() => {
+
+    try {
+      // Fetch real scanned prices from Supabase
+      const priceRes = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: engineInput.map(i => ({ name: i.product.name })) })
+      });
+      const { prices: realPrices } = priceRes.ok ? await priceRes.json() : { prices: {} };
+
+      // Blend real prices with estimates
+      const { blendWithReceiptData } = await import("@/api/pricingEngine");
+      const blendedInput = engineInput.map(({ product, quantity }) => {
+        const key = product.name?.toLowerCase();
+        const storeAvgs = realPrices[key] || {};
+        const blended = blendWithReceiptData(product, storeAvgs);
+        return { product: { ...product, estimated_prices: blended }, quantity };
+      });
+
+      const comparison = compareCartAcrossStores(blendedInput);
+      setResults(comparison);
+    } catch {
+      // Fall back to estimates only
       const comparison = compareCartAcrossStores(engineInput);
       setResults(comparison);
-      setIsCalculating(false);
-    }, 800);
+    }
+    setIsCalculating(false);
   };
 
   if (cart.length === 0) {
@@ -152,7 +174,6 @@ export default function PriceComparison() {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${tier.color}`}>
                         {tier.label}
                       </span>
-
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {i === 0 && totalSavings > 0
@@ -180,12 +201,11 @@ export default function PriceComparison() {
                     <div className="space-y-1">
                       {store.items.map((item, j) => (
                         <div key={j} className="flex justify-between text-xs">
-                          <span className={`truncate flex-1 mr-2 ${!item.available ? "text-orange-400 italic" : "text-gray-600"}`}>
+                          <span className="truncate flex-1 mr-2 text-gray-600">
                             {item.product_name || item.name}
                             {item.quantity > 1 && <span className="text-gray-400"> × {item.quantity}</span>}
-                            {!item.available && <span className="ml-1 text-[10px]">(substitute)</span>}
                           </span>
-                          <span className={`font-medium flex-shrink-0 ${!item.available ? "text-orange-400" : "text-gray-800"}`}>
+                          <span className="font-medium flex-shrink-0 text-gray-800">
                             ${(item.estimated_price * item.quantity).toFixed(2)}
                           </span>
                         </div>
@@ -217,8 +237,8 @@ export default function PriceComparison() {
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-7 h-7 text-purple-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Help improve estimates</p>
-                    <p className="text-xs text-gray-500">Scan your receipt to contribute real prices</p>
+                    <p className="font-semibold text-gray-900 text-sm">Scan your receipt</p>
+                    <p className="text-xs text-gray-500">Get accurate budget tracking for your household</p>
                   </div>
                 </div>
                 <Button

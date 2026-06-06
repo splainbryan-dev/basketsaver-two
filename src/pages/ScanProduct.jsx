@@ -312,27 +312,39 @@ export default function ScanProduct() {
                   <p className="text-blue-600 font-bold text-sm">${(item.price || 0).toFixed(2)}</p>
                   {item.quantity > 1 && <p className="text-xs text-gray-400">×{item.quantity}</p>}
                 </div>
-                <button
-                  onClick={() => handleAddToCart(item, i)}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0 ${
-                    addedIds[i]
-                      ? "bg-green-500 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {addedIds[i] ? "✓" : <><Plus className="w-3 h-3" />Add</>}
-                </button>
+                {mode === "product" && (
+                  <button
+                    onClick={() => handleAddToCart(item, i)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0 ${
+                      addedIds[i]
+                        ? "bg-green-500 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    {addedIds[i] ? "✓" : <><Plus className="w-3 h-3" />Add</>}
+                  </button>
+                )}
               </div>
             ))}
           </div>
 
           <div className="mt-4 flex gap-3">
-            <button
-              onClick={() => navigate(createPageUrl("Cart"))}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors"
-            >
-              View Cart
-            </button>
+            {mode === "product" && (
+              <button
+                onClick={() => navigate(createPageUrl("Cart"))}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors"
+              >
+                View Cart
+              </button>
+            )}
+            {mode === "receipt" && (
+              <button
+                onClick={() => navigate(createPageUrl("History"))}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors"
+              >
+                View History
+              </button>
+            )}
             <button
               onClick={handleReset}
               className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 rounded-xl font-semibold text-sm transition-colors"
