@@ -34,7 +34,9 @@ async function analyzeImage(base64Data, mediaType, mode) {
   });
 
   if (!response.ok) throw new Error(`API error ${response.status}`);
-  return await response.json();
+  const data = await response.json();
+  if (data._debug) throw new Error(data._debug);
+  return data;
 }
 
 async function saveReceiptToSupabase(parsed, userId) {

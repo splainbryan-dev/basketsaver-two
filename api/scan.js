@@ -38,7 +38,7 @@ If you cannot identify the product, return: {"name":"Unknown Product","price":0,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-4-5",
         max_tokens: 1500,
         messages: [{
           role: "user",
@@ -52,7 +52,14 @@ If you cannot identify the product, return: {"name":"Unknown Product","price":0,
 
     if (!response.ok) {
       const err = await response.text();
-      return res.status(response.status).json({ error: err });
+      console.error("Anthropic error:", response.status, err);
+      return res.status(200).json({ 
+        store_name: null, 
+        receipt_date: null, 
+        receipt_total: null, 
+        items: [],
+        _debug: `Anthropic ${response.status}: ${err.substring(0, 200)}`
+      });
     }
 
     const data = await response.json();
