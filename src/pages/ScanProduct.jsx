@@ -26,6 +26,28 @@ function addToCart(product) {
   window.dispatchEvent(new Event("cartUpdated"));
 }
 
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.7).split(",")[1]);
+    };
+    img.src = url;
+  });
+}
+
 async function analyzeImage(base64Data, mediaType, mode) {
   const response = await fetch("/api/scan", {
     method: "POST",
@@ -118,14 +140,8 @@ export default function ScanProduct() {
     setIsProcessing(true);
 
     try {
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result.split(",")[1]);
-        reader.onerror = rej;
-        reader.readAsDataURL(file);
-      });
-
-      const mediaType = file.type || "image/jpeg";
+      const base64 = await compressImage(file);
+      const mediaType = "image/jpeg";
       const parsed = await analyzeImage(base64, mediaType, scanMode);
       const userId = getUserId();
 
