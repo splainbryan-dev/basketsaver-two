@@ -80,14 +80,16 @@ export default function Cart() {
 
   const saveList = () => {
     if (!listName.trim()) return;
+    const currentTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    const currentItems = cart.reduce((s, i) => s + i.quantity, 0);
     const lists = JSON.parse(localStorage.getItem("savedLists") || "[]");
     lists.push({
       id: Date.now().toString(),
       name: listName.trim(),
       items: cart,
       saved_at: new Date().toISOString(),
-      item_count: totalItems,
-      estimated_total: krogerTotal,
+      item_count: currentItems,
+      estimated_total: currentTotal,
     });
     localStorage.setItem("savedLists", JSON.stringify(lists));
     setListName("");
