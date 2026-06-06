@@ -15,6 +15,25 @@ const CATEGORY_ICONS = {
   Deli: "🥪", Candy: "🍬", Baking: "🧁", Alcohol: "🍺", International: "🌍",
 };
 
+function ItemImage({ item }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (item.image_url && !imgFailed) {
+    return (
+      <img
+        src={item.image_url}
+        alt={item.product_name}
+        className="w-full h-16 object-contain"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="text-3xl text-center">
+      {CATEGORY_ICONS[item.category] || "🛒"}
+    </div>
+  );
+}
+
 export default function BuyAgain() {
   const navigate = useNavigate();
   const [pastItems, setPastItems] = useState([]);
@@ -76,8 +95,8 @@ export default function BuyAgain() {
         {pastItems.map((item) => (
           <Card key={item.product_id} className="border border-gray-200 bg-white">
             <CardContent className="p-3 flex flex-col gap-2">
-              <div className="text-3xl text-center py-2">
-                {CATEGORY_ICONS[item.category] || "🛒"}
+              <div className="h-16 flex items-center justify-center py-1">
+                <ItemImage item={item} />
               </div>
               <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight text-center">
                 {item.product_name}
